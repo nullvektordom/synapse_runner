@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/medication_entity.dart';
 import '../providers/medication_provider.dart';
 import 'package:intl/intl.dart';
+import 'add_medication_screen.dart';
 
 class MedicationListScreen extends ConsumerWidget {
   const MedicationListScreen({super.key});
@@ -14,6 +15,17 @@ class MedicationListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Medications'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddMedicationScreen(),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
       body: medicationsAsync.when(
         data: (medications) {
