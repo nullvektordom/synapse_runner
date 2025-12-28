@@ -140,41 +140,93 @@ class _TaskScreenState extends ConsumerState<TaskScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: otherTasks.length,
-                  padding: const EdgeInsets.all(16),
-                  itemBuilder: (context, index) {
-                    final task = otherTasks[index];
-                    final duration = DateTime.now().difference(task.startTime);
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: const Icon(Icons.task),
-                        title: Text(task.title),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (task.description != null) Text(task.description!),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Started ${duration.inMinutes} min ago',
-                              style: Theme.of(context).textTheme.labelSmall,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'Other Tasks',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.check_circle_outline),
-                          onPressed: () {
-                            ref
-                                .read(taskNotifierProvider.notifier)
-                                .completeTask(task.id);
-                          },
-                        ),
-                        isThreeLine: task.description != null,
                       ),
-                    );
-                  },
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: otherTasks.length,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemBuilder: (context, index) {
+                          final task = otherTasks[index];
+                          final duration =
+                              DateTime.now().difference(task.startTime);
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 2,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                child: Icon(
+                                  Icons.schedule,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                              ),
+                              title: Text(
+                                task.title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (task.description != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(task.description!),
+                                  ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Queued ${duration.inMinutes} min ago',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.check_circle_outline),
+                                onPressed: () {
+                                  ref
+                                      .read(taskNotifierProvider.notifier)
+                                      .completeTask(task.id);
+                                },
+                                tooltip: 'Complete task',
+                              ),
+                              isThreeLine: task.description != null,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),

@@ -21,6 +21,19 @@ class TaskNotificationWatcher {
   }
 
   void _watchCurrentTask() {
+    // Handle initial state on app startup
+    Future.microtask(() async {
+      final currentTaskAsync = ref.read(currentTaskProvider);
+      currentTaskAsync.whenData((task) async {
+        final service = ref.read(taskNotificationServiceProvider);
+        if (task != null) {
+          // Restore notification for existing task after app restart
+          await service.showTaskNotification(task);
+        }
+      });
+    });
+
+    // Listen for changes to current task
     ref.listen<AsyncValue<TaskEntity?>>(
       currentTaskProvider,
       (previous, next) {

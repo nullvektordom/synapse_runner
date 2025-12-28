@@ -1,13 +1,14 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/task_entity.dart';
+import '../../../core/services/foreground_service.dart';
 
 class TaskNotificationService {
-  static const int _taskNotificationId = 1000;
   static const String _channelId = 'current_task_channel';
   static const String _channelName = 'Current Task';
   static const String _channelDescription = 'Shows your current active task';
 
   final FlutterLocalNotificationsPlugin _notifications;
+  bool _isServiceRunning = false;
 
   TaskNotificationService(this._notifications);
 
@@ -38,33 +39,14 @@ class TaskNotificationService {
     final duration = DateTime.now().difference(task.startTime);
     final minutes = duration.inMinutes;
 
-    final androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true, // Makes it persistent
-      autoCancel: false, // Prevents dismissal by swipe
-      playSound: false,
-      enableVibration: false,
-      showWhen: false,
-      icon: '@mipmap/ic_launcher',
-      styleInformation: BigTextStyleInformation(
-        task.description ?? '',
-        contentTitle: 'Current Task: ${task.title}',
-        summaryText: 'Running for $minutes min',
-      ),
+    // Always use startService - it handles both starting and updating
+    // This ensures the service is restarted after app restart
+    await ForegroundService.startService(
+      taskTitle: task.title,
+      taskDescription: task.description ?? '',
+      durationMinutes: minutes,
     );
-
-    final details = NotificationDetails(android: androidDetails);
-
-    await _notifications.show(
-      _taskNotificationId,
-      'Current Task: ${task.title}',
-      task.description ?? 'Running for $minutes min',
-      details,
-    );
+    _isServiceRunning = true;
   }
 
   Future<void> updateTaskNotification(TaskEntity task) async {
@@ -72,6 +54,9 @@ class TaskNotificationService {
   }
 
   Future<void> cancelTaskNotification() async {
-    await _notifications.cancel(_taskNotificationId);
+    if (_isServiceRunning) {
+      await ForegroundService.stopService();
+      _isServiceRunning = false;
+    }
   }
 }

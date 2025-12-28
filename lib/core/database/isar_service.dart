@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../features/working_memory/models/task_entity.dart';
+import '../../features/meds/models/medication_entity.dart';
 
 class IsarService {
   static Isar? _isar;
@@ -10,7 +11,7 @@ class IsarService {
 
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open(
-      [TaskEntitySchema],
+      [TaskEntitySchema, MedicationEntitySchema],
       directory: dir.path,
       inspector: true,
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/database/isar_service.dart';
 import 'core/providers/notification_provider.dart';
 import 'core/routing/app_router.dart';
+import 'core/services/permission_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/working_memory/providers/task_notification_provider.dart';
 
@@ -11,6 +12,10 @@ void main() async {
 
   // Initialize Isar database
   await IsarService.instance;
+
+  // Request notification permissions (Android 13+)
+  final permissionService = PermissionService();
+  await permissionService.requestNotificationPermission();
 
   runApp(
     const ProviderScope(
