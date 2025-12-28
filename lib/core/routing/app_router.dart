@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/working_memory/screens/task_screen.dart';
 import '../../features/working_memory/widgets/current_task_banner.dart';
+import '../../features/meds/screens/medication_list_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -16,6 +17,11 @@ class AppRouter {
         path: '/tasks',
         name: 'tasks',
         builder: (context, state) => const TaskScreen(),
+      ),
+      GoRoute(
+        path: '/medications',
+        name: 'medications',
+        builder: (context, state) => const MedicationListScreen(),
       ),
     ],
   );
@@ -67,6 +73,14 @@ class HomeScreen extends StatelessWidget {
                               subtitle: const Text('Track what you\'re doing right now'),
                               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                               onTap: () => context.go('/tasks'),
+                            ),
+                            const Divider(),
+                            ListTile(
+                              leading: const Icon(Icons.medication),
+                              title: const Text('Medications'),
+                              subtitle: const Text('View medication schedule'),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                              onTap: () => context.go('/medications'),
                             ),
                           ],
                         ),
