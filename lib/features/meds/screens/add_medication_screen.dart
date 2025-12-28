@@ -5,7 +5,9 @@ import '../models/medication_entity.dart';
 import '../providers/medication_provider.dart';
 
 class AddMedicationScreen extends ConsumerStatefulWidget {
-  const AddMedicationScreen({super.key});
+  final MedicationEntity? medication;
+
+  const AddMedicationScreen({super.key, this.medication});
 
   @override
   ConsumerState<AddMedicationScreen> createState() => _AddMedicationScreenState();
@@ -16,9 +18,31 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
   final _medNameController = TextEditingController();
   final _dosageController = TextEditingController();
 
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  bool _isVital = false;
+  late TimeOfDay _selectedTime;
+  late bool _isVital;
   bool _isSaving = false;
+
+  bool get _isEditMode => widget.medication != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Pre-fill fields if in edit mode
+    if (_isEditMode) {
+      final med = widget.medication!;
+      _medNameController.text = med.medName;
+      _dosageController.text = med.dosage;
+      _selectedTime = TimeOfDay(
+        hour: med.scheduledTime.hour,
+        minute: med.scheduledTime.minute,
+      );
+      _isVital = med.isVital;
+    } else {
+      _selectedTime = TimeOfDay.now();
+      _isVital = false;
+    }
+  }
 
   @override
   void dispose() {
@@ -62,14 +86,27 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
         _selectedTime.minute,
       );
 
-      final medication = MedicationEntity(
-        medName: _medNameController.text.trim(),
-        dosage: _dosageController.text.trim(),
-        scheduledTime: scheduledDateTime,
-        isVital: _isVital,
-      );
-
-      await repository.createMedication(medication);
+      if (_isEditMode) {
+        // Update existing medication
+        final updatedMedication = MedicationEntity(
+          medName: _medNameController.text.trim(),
+          dosage: _dosageController.text.trim(),
+          scheduledTime: scheduledDateTime,
+          isVital: _isVital,
+          lastTakenTimestamp: widget.medication!.lastTakenTimestamp,
+        );
+        updatedMedication.id = widget.medication!.id;
+        await repository.updateMedication(updatedMedication);
+      } else {
+        // Create new medication
+        final medication = MedicationEntity(
+          medName: _medNameController.text.trim(),
+          dosage: _dosageController.text.trim(),
+          scheduledTime: scheduledDateTime,
+          isVital: _isVital,
+        );
+        await repository.createMedication(medication);
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -96,7 +133,7 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Medication'),
+        title: Text(_isEditMode ? 'Edit Medication' : 'Add Medication'),
       ),
       body: Form(
         key: _formKey,
@@ -165,7 +202,10 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save Medication', style: TextStyle(fontSize: 16)),
+                  : Text(
+                      _isEditMode ? 'Update Medication' : 'Save Medication',
+                      style: const TextStyle(fontSize: 16),
+                    ),
             ),
           ],
         ),

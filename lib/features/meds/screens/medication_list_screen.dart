@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/medication_entity.dart';
 import '../providers/medication_provider.dart';
+import '../controllers/undo_delete_controller.dart';
 import 'package:intl/intl.dart';
 import 'add_medication_screen.dart';
 
@@ -13,9 +14,7 @@ class MedicationListScreen extends ConsumerWidget {
     final medicationsAsync = ref.watch(medicationsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Medications'),
-      ),
+      appBar: AppBar(title: const Text('Medications')),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -34,11 +33,7 @@ class MedicationListScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.medication_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
+                  Icon(Icons.medication_outlined, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
                     'No medications yet',
@@ -54,64 +49,115 @@ class MedicationListScreen extends ConsumerWidget {
             itemCount: medications.length,
             itemBuilder: (context, index) {
               final med = medications[index];
-              return _MedicationCard(medication: med);
+              return _MedicationCard(key: ValueKey(med.id), medication: med);
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error: $error'),
-        ),
+        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
   }
 }
 
-class _MedicationCard extends StatelessWidget {
+class _MedicationCard extends ConsumerWidget {
   final MedicationEntity medication;
 
-  const _MedicationCard({required this.medication});
+  const _MedicationCard({super.key, required this.medication});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeFormat = DateFormat('HH:mm');
     final scheduledTime = timeFormat.format(medication.scheduledTime);
 
     String lastTakenText = 'Never taken';
     if (medication.lastTakenTimestamp != null) {
-      final lastTaken = DateFormat('MMM d, HH:mm').format(medication.lastTakenTimestamp!);
+      final lastTaken = DateFormat(
+        'MMM d, HH:mm',
+      ).format(medication.lastTakenTimestamp!);
       lastTakenText = 'Last: $lastTaken';
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Icon(
-          medication.isVital ? Icons.emergency : Icons.medication,
-          color: medication.isVital ? Colors.orange : Colors.blue,
-        ),
-        title: Text(
-          medication.medName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text('Dosage: ${medication.dosage}'),
-            Text('Scheduled: $scheduledTime'),
-            const SizedBox(height: 4),
-            Text(
-              lastTakenText,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+    return Dismissible(
+      key: ValueKey(medication.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Delete Medication'),
+              content: Text('Delete ${medication.medName}?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      onDismissed: (_) async {
+        if (!context.mounted) return;
+
+        // Delegate all delete logic to controller
+        // The controller will show a SnackBar with duration of 4 seconds
+        // and handle the actual deletion after the SnackBar dismisses
+        await ref.read(undoDeleteControllerProvider).handleDelete(
+              context: context,
+              medication: medication,
+            );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(
+            medication.isVital ? Icons.emergency : Icons.medication,
+            color: medication.isVital ? Colors.orange : Colors.blue,
+          ),
+          title: Text(
+            medication.medName,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text('Dosage: ${medication.dosage}'),
+              Text('Scheduled: $scheduledTime'),
+              const SizedBox(height: 4),
+              Text(
+                lastTakenText,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
-            ),
-          ],
+            ],
+          ),
+          isThreeLine: true,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AddMedicationScreen(medication: medication),
+              ),
+            );
+          },
         ),
-        isThreeLine: true,
       ),
     );
   }
