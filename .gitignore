@@ -1,4 +1,5 @@
 # Miscellaneous
+.nexus/
 *.class
 *.log
 *.pyc
