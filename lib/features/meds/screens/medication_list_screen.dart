@@ -5,6 +5,7 @@ import '../providers/medication_provider.dart';
 import '../controllers/undo_delete_controller.dart';
 import 'package:intl/intl.dart';
 import 'add_medication_screen.dart';
+import '../../../core/services/alarm_service.dart';
 
 class MedicationListScreen extends ConsumerWidget {
   const MedicationListScreen({super.key});
@@ -14,7 +15,25 @@ class MedicationListScreen extends ConsumerWidget {
     final medicationsAsync = ref.watch(medicationsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Medications')),
+      appBar: AppBar(
+        title: const Text('Medications'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.alarm_add),
+            tooltip: 'Test Alarm (1 min)',
+            onPressed: () async {
+              await AlarmService.scheduleTestAlarm();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Test alarm scheduled for 1 minute from now'),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
