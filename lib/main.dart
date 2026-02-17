@@ -8,6 +8,8 @@ import 'core/services/permission_service.dart';
 import 'core/services/alarm_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/meds/models/medication_entity.dart';
+import 'features/appointments/models/appointment_entity.dart';
+import 'features/appointments/services/appointment_alarm_service.dart';
 import 'features/working_memory/providers/task_notification_provider.dart';
 
 void main() async {
@@ -20,6 +22,10 @@ void main() async {
   await AlarmService.initialize();
   final meds = await isar.medicationEntitys.where().findAll();
   await AlarmService.rescheduleAllAlarms(meds);
+
+  // Reschedule appointment alarms
+  final appointments = await isar.appointmentEntitys.where().findAll();
+  await AppointmentAlarmService.rescheduleAllAppointments(appointments);
 
   // Request notification permissions (Android 13+)
   final permissionService = PermissionService();

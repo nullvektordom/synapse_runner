@@ -74,9 +74,14 @@ UI (ConsumerWidget) → watches Provider → calls StateNotifier
 ### Routing
 
 ```
-/              → HomeScreen (in app_router.dart)
-/tasks         → TaskScreen
-/medications   → MedicationListScreen
+/                       → HomeScreen (in app_router.dart)
+/tasks                  → TaskScreen
+/medications            → MedicationListScreen
+/take-meds              → TakeMedicationScreen
+/appointments           → AppointmentListScreen
+/appointments/add       → AddAppointmentScreen
+/appointments/:id       → AppointmentDetailScreen
+/appointments/:id/edit  → AddAppointmentScreen (edit mode)
 ```
 
 ### Native Android Layer
@@ -94,7 +99,8 @@ Method channel methods: `startService`, `updateService`, `stopService`
 Isar NoSQL with singleton initialization via `IsarService.instance`. Collections:
 
 - **TaskEntity** — title (indexed), description, startTime, durationMinutes, reminderFrequencyMinutes, isCompleted
-- **MedicationEntity** — medName (indexed), dosage, scheduledTime, lastTakenTimestamp, isVital
+- **MedicationEntity** — medName (indexed), dosage, scheduledTime, scheduledTimesMinutes[], takenDoses[], isVital
+- **AppointmentEntity** — title (indexed), description, dateTime (indexed), isCompleted, notificationTiers[]
 
 Generated files (`*.g.dart`) are produced by `isar_generator`. Regenerate with:
 
@@ -158,8 +164,8 @@ import '../models/task_entity.dart';    // Relative project imports
 |--------|---------|--------|
 | 0 | Foundation (Flutter + Isar + Riverpod + GoRouter + Theme) | Done |
 | 1 | Working Memory — persistent task banner + foreground service | Done |
-| 2 | Medication Tracker — CRUD, alarm scheduling, double-dose prevention | In Progress |
-| 3 | Appointment Killer — 3-tier notification warnings (24h, 1h, 15min) | Planned |
+| 2 | Medication Tracker — CRUD, alarm scheduling, double-dose prevention | Done |
+| 3 | Appointment Killer — 3-tier notification warnings (24h, 1h, 15min) | In Progress |
 | 4 | Financial Safety — impulse purchase cooling-off periods | Planned |
 | 5+ | Hyperfocus — session timers, full-screen takeover, DND integration | Planned |
 

@@ -19,7 +19,7 @@ planning_path = "/home/nullvektor/obsidian/projects/synapse_runner"
 is_unlocked = true
 
 [state.active_sprint]
-current = "sprint-2-medication-tracker"
+current = "sprint-3-appointment-killer"
 status = "in_progress"
 
 [templates]
