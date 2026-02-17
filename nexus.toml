@@ -1,0 +1,35 @@
+[project]
+name = "synapse_runner"
+version = "0.1.0"
+obsidian_path = "/home/nullvektor/obsidian/projects/synapse_runner"
+
+[structure]
+planning_dir = "01-PLANNING"
+management_dir = "00-MANAGEMENT"
+sprint_dir = "00-MANAGEMENT/sprints"
+
+[gate]
+heuristics_file = ".nexus/gate-heuristics.json"
+strict_mode = true
+
+[obsidian]
+planning_path = "/home/nullvektor/obsidian/projects/synapse_runner"
+
+[state]
+is_unlocked = true
+
+[state.active_sprint]
+current = "sprint-2-medication-tracker"
+status = "in_progress"
+
+[templates]
+claude_template = "templates/CLAUDE.md.example"
+
+[brain]
+qdrant_url = "http://100.105.8.97:6334"
+enabled = true
+
+[llm]
+provider = "gemini"
+model = "gemini-3-pro-preview"
+enabled = true

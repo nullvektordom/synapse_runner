@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.synapse_runner"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "29.0.13846066"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -23,9 +23,17 @@ android {
     defaultConfig {
         applicationId = "com.example.synapse_runner"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        externalNativeBuild {
+            cmake {
+                cppFlags("-Wl,-z,max-page-size=16384")
+            }
+            ndkBuild {
+                arguments("-Wl,-z,max-page-size=16384")
+            }
+        }
     }
 
     buildTypes {
@@ -33,6 +41,13 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // Forces the system to use aligned, uncompressed libraries
+            useLegacyPackaging = false
         }
     }
 }

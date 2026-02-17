@@ -1,4 +1,5 @@
 # Miscellaneous
+.nexus/
 *.class
 *.log
 *.pyc
@@ -138,3 +139,9 @@ $RECYCLE.BIN/
 *.backup
 *.old
 *.orig
+
+# Build analysis and metadata
+apk_check/
+apk-check.json
+app-metadata.json
+captures/

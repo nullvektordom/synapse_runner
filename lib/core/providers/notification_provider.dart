@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../routing/app_router.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
@@ -13,10 +14,21 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
+
+    // Handle notification tap that launched the app (app was killed)
+    final launchDetails = await _notifications.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      final payload = launchDetails!.notificationResponse?.payload;
+      if (payload != null) {
+        AppRouter.router.go(payload);
+      }
+    }
   }
 
   void _onNotificationTap(NotificationResponse response) {
-    // Handle notification tap - will route using GoRouter
+    if (response.payload != null) {
+      AppRouter.router.go(response.payload!);
+    }
   }
 
   Future<void> showNotification({
