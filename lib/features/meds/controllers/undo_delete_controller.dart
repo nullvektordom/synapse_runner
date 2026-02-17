@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/alarm_service.dart';
 import '../models/medication_entity.dart';
 import '../providers/medication_provider.dart';
 
@@ -20,7 +21,8 @@ class UndoDeleteController {
     final messenger = ScaffoldMessenger.of(context);
     final repository = await ref.read(medicationRepositoryProvider.future);
 
-    // Delete immediately for optimistic UI
+    // Cancel alarms and delete immediately for optimistic UI
+    await AlarmService.cancelAlarmsForMedication(medication.id);
     await repository.deleteMedication(medication.id);
 
     // Ensure no stacked SnackBars
@@ -36,8 +38,9 @@ class UndoDeleteController {
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () async {
-            // Undo = reinsert the medication
+            // Undo = reinsert the medication and reschedule alarms
             await repository.createMedication(medication);
+            await AlarmService.scheduleAlarmsForMedication(medication);
           },
         ),
       ),

@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar/isar.dart';
 import 'core/database/isar_service.dart';
 import 'core/providers/notification_provider.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/permission_service.dart';
 import 'core/services/alarm_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/meds/models/medication_entity.dart';
 import 'features/working_memory/providers/task_notification_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Isar database
-  await IsarService.instance;
+  final isar = await IsarService.instance;
 
-  // Initialize Alarm Service
+  // Initialize Alarm Service and reschedule per-medication alarms
   await AlarmService.initialize();
+  final meds = await isar.medicationEntitys.where().findAll();
+  await AlarmService.rescheduleAllAlarms(meds);
 
   // Request notification permissions (Android 13+)
   final permissionService = PermissionService();

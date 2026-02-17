@@ -14,6 +14,15 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
+
+    // Handle notification tap that launched the app (app was killed)
+    final launchDetails = await _notifications.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      final payload = launchDetails!.notificationResponse?.payload;
+      if (payload != null) {
+        AppRouter.router.go(payload);
+      }
+    }
   }
 
   void _onNotificationTap(NotificationResponse response) {

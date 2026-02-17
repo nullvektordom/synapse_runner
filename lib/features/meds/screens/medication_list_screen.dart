@@ -86,16 +86,9 @@ class _MedicationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timeFormat = DateFormat('HH:mm');
-    final scheduledTime = timeFormat.format(medication.scheduledTime);
-
-    String lastTakenText = 'Never taken';
-    if (medication.lastTakenTimestamp != null) {
-      final lastTaken = DateFormat(
-        'MMM d, HH:mm',
-      ).format(medication.lastTakenTimestamp!);
-      lastTakenText = 'Last: $lastTaken';
-    }
+    final timesStr = medication.scheduledTimesMinutes.isNotEmpty
+        ? medication.scheduledTimesMinutes.map((m) => m.toTimeString()).join(', ')
+        : DateFormat('HH:mm').format(medication.scheduledTime);
 
     return Dismissible(
       key: ValueKey(medication.id),
@@ -158,12 +151,7 @@ class _MedicationCard extends ConsumerWidget {
             children: [
               const SizedBox(height: 4),
               Text('Dosage: ${medication.dosage}'),
-              Text('Scheduled: $scheduledTime'),
-              const SizedBox(height: 4),
-              Text(
-                lastTakenText,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
+              Text('Scheduled: $timesStr'),
             ],
           ),
           isThreeLine: true,

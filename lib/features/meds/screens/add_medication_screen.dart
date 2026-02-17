@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../models/medication_entity.dart';
 import '../providers/medication_provider.dart';
 
@@ -10,7 +9,8 @@ class AddMedicationScreen extends ConsumerStatefulWidget {
   const AddMedicationScreen({super.key, this.medication});
 
   @override
-  ConsumerState<AddMedicationScreen> createState() => _AddMedicationScreenState();
+  ConsumerState<AddMedicationScreen> createState() =>
+      _AddMedicationScreenState();
 }
 
 class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
@@ -18,7 +18,7 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
   final _medNameController = TextEditingController();
   final _dosageController = TextEditingController();
 
-  late TimeOfDay _selectedTime;
+  List<TimeOfDay> _scheduledTimes = [];
   late bool _isVital;
   bool _isSaving = false;
 
@@ -28,18 +28,16 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
   void initState() {
     super.initState();
 
-    // Pre-fill fields if in edit mode
     if (_isEditMode) {
       final med = widget.medication!;
       _medNameController.text = med.medName;
       _dosageController.text = med.dosage;
-      _selectedTime = TimeOfDay(
-        hour: med.scheduledTime.hour,
-        minute: med.scheduledTime.minute,
-      );
+      _scheduledTimes = med.scheduledTimesMinutes
+          .map((m) => m.toTimeOfDay())
+          .toList();
       _isVital = med.isVital;
     } else {
-      _selectedTime = TimeOfDay.now();
+      _scheduledTimes = [];
       _isVital = false;
     }
   }
@@ -51,21 +49,33 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
     super.dispose();
   }
 
-  Future<void> _selectTime(BuildContext context) async {
+  Future<void> _addTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: TimeOfDay.now(),
     );
 
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
+    if (picked != null) {
+      final alreadyExists = _scheduledTimes.any(
+        (t) => t.hour == picked.hour && t.minute == picked.minute,
+      );
+      if (!alreadyExists) {
+        setState(() {
+          _scheduledTimes.add(picked);
+          _scheduledTimes.sort((a, b) =>
+              a.toMinutesSinceMidnight().compareTo(b.toMinutesSinceMidnight()));
+        });
+      }
     }
   }
 
   Future<void> _saveMedication() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_scheduledTimes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one scheduled time')),
+      );
       return;
     }
 
@@ -74,38 +84,45 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
     });
 
     try {
-      final repository = await ref.read(medicationRepositoryProvider.future);
+      final timesMinutes = _scheduledTimes
+          .map((t) => t.toMinutesSinceMidnight())
+          .toList()
+        ..sort();
 
-      // Convert TimeOfDay to DateTime
       final now = DateTime.now();
+      final firstMinutes = timesMinutes.first;
       final scheduledDateTime = DateTime(
         now.year,
         now.month,
         now.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
+        firstMinutes ~/ 60,
+        firstMinutes % 60,
       );
 
       if (_isEditMode) {
-        // Update existing medication
-        final updatedMedication = MedicationEntity(
+        final updated = MedicationEntity(
           medName: _medNameController.text.trim(),
           dosage: _dosageController.text.trim(),
           scheduledTime: scheduledDateTime,
+          scheduledTimesMinutes: timesMinutes,
           isVital: _isVital,
           lastTakenTimestamp: widget.medication!.lastTakenTimestamp,
         );
-        updatedMedication.id = widget.medication!.id;
-        await repository.updateMedication(updatedMedication);
+        updated.id = widget.medication!.id;
+        await ref
+            .read(medicationNotifierProvider.notifier)
+            .updateMedication(updated);
       } else {
-        // Create new medication
-        final medication = MedicationEntity(
+        final med = MedicationEntity(
           medName: _medNameController.text.trim(),
           dosage: _dosageController.text.trim(),
           scheduledTime: scheduledDateTime,
+          scheduledTimesMinutes: timesMinutes,
           isVital: _isVital,
         );
-        await repository.createMedication(medication);
+        await ref
+            .read(medicationNotifierProvider.notifier)
+            .createMedication(med);
       }
 
       if (mounted) {
@@ -128,9 +145,6 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final timeFormat = DateFormat('HH:mm');
-    final displayTime = DateTime(2000, 1, 1, _selectedTime.hour, _selectedTime.minute);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditMode ? 'Edit Medication' : 'Add Medication'),
@@ -169,15 +183,37 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.access_time),
-                title: const Text('Scheduled Time'),
-                subtitle: Text(timeFormat.format(displayTime)),
-                trailing: const Icon(Icons.edit),
-                onTap: () => _selectTime(context),
-              ),
+            const SizedBox(height: 24),
+            Text(
+              'Scheduled Times',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (int i = 0; i < _scheduledTimes.length; i++)
+                  Chip(
+                    label: Text(
+                      _scheduledTimes[i]
+                          .toMinutesSinceMidnight()
+                          .toTimeString(),
+                    ),
+                    deleteIcon: const Icon(Icons.close, size: 18),
+                    onDeleted: () {
+                      setState(() {
+                        _scheduledTimes.removeAt(i);
+                      });
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.add_alarm),
+              label: const Text('Add Time'),
+              onPressed: () => _addTime(context),
             ),
             const SizedBox(height: 16),
             SwitchListTile(

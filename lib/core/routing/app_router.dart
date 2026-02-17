@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/working_memory/screens/task_screen.dart';
 import '../../features/working_memory/widgets/current_task_banner.dart';
 import '../../features/meds/screens/medication_list_screen.dart';
+import '../../features/meds/screens/take_medication_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -22,6 +23,11 @@ class AppRouter {
         path: '/medications',
         name: 'medications',
         builder: (context, state) => const MedicationListScreen(),
+      ),
+      GoRoute(
+        path: '/take-meds',
+        name: 'take-meds',
+        builder: (context, state) => const TakeMedicationScreen(),
       ),
     ],
   );
@@ -81,6 +87,14 @@ class HomeScreen extends StatelessWidget {
                               subtitle: const Text('View medication schedule'),
                               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                               onTap: () => context.go('/medications'),
+                            ),
+                            const Divider(),
+                            ListTile(
+                              leading: const Icon(Icons.checklist),
+                              title: const Text('Take Medications'),
+                              subtitle: const Text('Check off today\'s meds'),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                              onTap: () => context.go('/take-meds'),
                             ),
                           ],
                         ),
